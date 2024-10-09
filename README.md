@@ -1,1 +1,7 @@
-# CS6320-Assignment-1
+CS6329 Assignment 1
+==========================================================================
+
+Group 20
+-----
+Zhouhang Sun, Weicheng Liu, and Shi Yin Hong
+
