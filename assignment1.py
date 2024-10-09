@@ -1,13 +1,12 @@
 '''
 CS6320 Assignment 1
-Team 24
+Team 20
 Zhouhang Sun, Weicheng Liu, Shi Yin Hong
 '''
 
 import re
 import math
 from collections import defaultdict
-
 
 # 停用词列表（可以根据需要添加更多）
 # Stop words list (can add more if needed)
@@ -23,29 +22,25 @@ stop_words = set([
     "if", "in", "into", "is", "it", "its", "itself", "just"
 ])
 
-
 # 从文件中读取语料库
 # Read the corpus from a file
 def read_corpus(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
         return [line.strip() for line in file if line.strip()]
 
-
 # 文本预处理（移除标点符号、转为小写等）
 # Preprocess text (remove punctuation, lowercase, etc.)
 def preprocess_text(text):
-    text = text.lower()                  # 转为小写 / Convert to lowercase
+    text = text.lower()  # 转为小写 / Convert to lowercase
     text = re.sub(r'[^\w\s]', '', text)  # 移除标点符号 / Remove punctuation
-    tokens = text.split()                # 分词 / Tokenize
+    tokens = text.split()  # 分词 / Tokenize
     # 移除停用词 / Remove stop words
     return [word for word in tokens if word not in stop_words]
-
 
 # 对语料进行分词
 # Tokenize the corpus
 def tokenize_corpus(corpus):
     return [preprocess_text(review) for review in corpus]
-
 
 # 处理未知词，使用 <UNK> 替换低频词
 # Handle unknown words: replace low frequency words with <UNK>
@@ -73,7 +68,6 @@ def handle_unknown_words_by_threshold(corpus, n=5):
 
     return processed_corpus, word_counts, low_freq_words
 
-
 # 从 <UNK> 恢复词，如果它们在训练集中出现了超过5次
 # Restore words from <UNK> if they occur more than 5 times in the training set
 def replace_and_restore_rare_words_in_validation(val_corpus, unk_dict, train_word_counts, n=5):
@@ -98,7 +92,6 @@ def replace_and_restore_rare_words_in_validation(val_corpus, unk_dict, train_wor
     # print("从 <UNK> 恢复的词:", restored_words)
     return restored_val_corpus
 
-
 # 统计unigram（单个词）的频率
 # Count unigrams
 def count_unigrams(corpus):
@@ -110,7 +103,6 @@ def count_unigrams(corpus):
         for token in tokens:
             unigram_counts[token] += 1
     return unigram_counts, total_tokens
-
 
 # 统计bigram（词对）的频率
 # Count bigrams
@@ -132,7 +124,6 @@ def count_bigrams(corpus):
 
     return bigram_counts, unigram_counts, total_bigrams
 
-
 # 使用Add-k平滑计算unigram概率
 # Calculate unigram probabilities with Add-k smoothing
 def calculate_unigram_probabilities_add_k(unigram_counts, total_tokens, vocab_size, k):
@@ -140,7 +131,6 @@ def calculate_unigram_probabilities_add_k(unigram_counts, total_tokens, vocab_si
     for word, count in unigram_counts.items():
         unigram_probs[word] = (count + k) / (total_tokens + k * vocab_size)
     return unigram_probs
-
 
 # 使用Add-k平滑计算bigram概率
 # Calculate bigram probabilities with Add-k smoothing
@@ -152,7 +142,6 @@ def calculate_bigram_probabilities_add_k(bigram_counts, unigram_counts, vocab_si
             bigram_probs[word1][word2] = (bigram_counts.get(word1, {}).get(word2, 0) + k) / (unigram_counts[word1] + k * vocab_size)
     return bigram_probs
 
-
 # 使用现有的unigram概率计算困惑度
 # Calculate unigram perplexity
 def calculate_unigram_perplexity(val_corpus, unigram_probs):
@@ -162,13 +151,12 @@ def calculate_unigram_perplexity(val_corpus, unigram_probs):
         tokens = review
         for word in tokens:
             # 不再需要处理未见词，假设已经处理过
-            prob = unigram_probs.get(word, 0)  
+            prob = unigram_probs.get(word, 0)  # 如果找不到词，直接返回0
             if prob > 0:
                 log_prob_sum += math.log(prob, 2)
             total_words += 1
     perplexity = 2 ** (-log_prob_sum / total_words)
     return perplexity
-
 
 # 使用现有的bigram概率计算困惑度
 # Calculate bigram perplexity
@@ -179,17 +167,16 @@ def calculate_bigram_perplexity(val_corpus, bigram_probs):
         tokens = review
         for i in range(1, len(tokens)):
             word1, word2 = tokens[i-1], tokens[i]
-            prob = bigram_probs.get(word1, {}).get(word2, 0) 
+            prob = bigram_probs.get(word1, {}).get(word2, 0)  # 如果找不到bigram，返回0
             if prob > 0:
                 log_prob_sum += math.log(prob, 2)
             total_tokens += 1
     perplexity = 2 ** (-log_prob_sum / total_tokens)
     return perplexity
 
-
 # Process the dataset
 train_corpus = read_corpus(r'./A1_DATASET/train.txt')
-val_corpus = read_corpus(r'./A1_DATASET/val.txt')
+val_corpus = read_corpus(r'./A1_DATASET/train.txt')
 
 # 对训练集和验证集进行分词
 # Tokenize the train and validation corpora
@@ -218,7 +205,6 @@ unigram_counts, total_tokens = count_unigrams(tokenized_train_corpus)
 bigram_counts, unigram_counts, total_bigrams = count_bigrams(tokenized_train_corpus)
 vocab_size = len(unigram_counts)  # 词汇表的大小 / Vocabulary size
 
-
 # 初始化k值和结果列表
 # Initialize k value and results list
 k = 0.1
@@ -233,7 +219,7 @@ while k <= 1.0:
     # Calculate unigram and bigram perplexity for the training set
     unigram_probs_add_k = calculate_unigram_probabilities_add_k(unigram_counts, total_tokens, vocab_size, k)
     bigram_probs_add_k = calculate_bigram_probabilities_add_k(bigram_counts, unigram_counts, vocab_size, k)
-
+    
     train_unigram_perplexity = calculate_unigram_perplexity(processed_train_corpus, unigram_probs_add_k)
     train_bigram_perplexity = calculate_bigram_perplexity(processed_train_corpus, bigram_probs_add_k)
 
@@ -271,5 +257,61 @@ perplexity_results.sort(key=lambda x: x[1])  # 按照unigram困惑度排序 / So
 print("\nSorted Perplexities (Unigram, Bigram):")
 for k_value, unigram_perplexity, bigram_perplexity in perplexity_results:
     print(f"k={round(k_value, 5)}, Unigram Perplexity={unigram_perplexity}, Bigram Perplexity={bigram_perplexity}")
+
+# 计算未平滑的unigram概率
+# Calculate unsmoothed unigram probabilities
+def calculate_unsmoothed_unigram_probabilities(unigram_counts, total_tokens):
+    unigram_probs = {}
+    for word, count in unigram_counts.items():
+        unigram_probs[word] = (count) / (total_tokens)  # 未平滑处理 / No smoothing applied
+    return unigram_probs
+
+# 计算未平滑的bigram概率
+# Calculate unsmoothed bigram probabilities
+def calculate_unsmoothed_bigram_probabilities(bigram_counts, unigram_counts):
+    bigram_probs = {}
+    for word1 in bigram_counts:
+        bigram_probs[word1] = {}
+        for word2 in bigram_counts[word1]:
+            bigram_probs[word1][word2] = bigram_counts[word1][word2] / unigram_counts[word1]  # 未平滑处理 / No smoothing applied
+    return bigram_probs
+
+# 调用未平滑的unigram和bigram概率计算函数
+# Call unsmoothed unigram and bigram probability functions
+unigram_probs_unsmoothed = calculate_unsmoothed_unigram_probabilities(unigram_counts, total_tokens)
+bigram_probs_unsmoothed = calculate_unsmoothed_bigram_probabilities(bigram_counts, unigram_counts)
+
+# # 打印未平滑的unigram概率
+# # Print unsmoothed unigram probabilities
+# print("\nUnsmoothed Unigram Probabilities Sample:")
+# for word, prob in list(unigram_probs_unsmoothed.items())[:10]:  # 打印前10个单词的概率 / Print probabilities of the first 10 words
+#     print(f"{word}: {prob}")
+
+# # 打印未平滑的bigram概率
+# # Print unsmoothed bigram probabilities
+# print("\nUnsmoothed Bigram Probabilities Sample:")
+# for word1, word2_dict in list(bigram_probs_unsmoothed.items())[:5]:  # 打印前5个词对的概率 / Print probabilities of the first 5 word pairs
+#     for word2, prob in list(word2_dict.items())[:5]:  # 打印每个单词对应的5个bigram / Print 5 bigrams for each word
+#         print(f"{word1} {word2}: {prob}")
+
+# 计算未平滑的unigram困惑度
+# Calculate unsmoothed unigram perplexity
+unigram_perplexity_unsmoothed = calculate_unigram_perplexity(restored_val_corpus, unigram_probs_unsmoothed)
+
+# 打印未平滑的unigram困惑度
+# Print unsmoothed unigram perplexity
+print(f"\nUnsmoothed Unigram Perplexity: {unigram_perplexity_unsmoothed}")
+
+# 计算未平滑的bigram困惑度
+# Calculate unsmoothed bigram perplexity
+bigram_perplexity_unsmoothed = calculate_bigram_perplexity(restored_val_corpus, bigram_probs_unsmoothed)
+
+# 打印未平滑的bigram困惑度
+# Print unsmoothed bigram perplexity
+print(f"\nUnsmoothed Bigram Perplexity: {bigram_perplexity_unsmoothed}")
+
+
+
+
 
 
